@@ -1,21 +1,11 @@
 #!/usr/bin/env python3
 """
-Plot 2D points from three CSV files onto a single figure with distinct colors per file,
-after aligning each group's points to a common center for clearer presentation of central tendency.
-
-- Expected input directory: 25_10_23 containing b_1.csv, b_2.csv, b_3.csv
-- Each CSV: 32 pairs of x,y coordinates. Headers optional.
-- Output image: 25_10_23/combined_points_aligned.png
+Plot 2D points from multiple CSV files onto a single figure with distinct colors per file,
+after aligning each group's points to a common center.
+Calculates and displays statistical metrics (Variance, RMS spread).
 
 Usage:
-  python plot_points_aligned.py [DATA_DIR] [--method mean|median]
-
-Where DATA_DIR defaults to the sibling folder "25_10_23" next to this script.
-
-Notes:
-- Uses a headless matplotlib backend (Agg), so it always saves the figure to disk.
-- Points from each file are individually centered by their own mean/median and overlaid at (0, 0).
-- This highlights spread/shape while ignoring absolute offsets between files.
+  python plot_points_aligned.py [FILE1] [FILE2] ... [--method mean|median]
 """
 from __future__ import annotations
 
@@ -23,24 +13,30 @@ import csv
 import sys
 import os
 from pathlib import Path
-from typing import List, Tuple
+from typing import List, Tuple, Dict, Any
 import argparse
 import statistics
+import math
 
-# Use a headless backend so this works on servers or without a display
+# Try importing numpy for advanced stats
+try:
+    import numpy as np
+    HAS_NUMPY = True
+except ImportError:
+    HAS_NUMPY = False
+
 import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
-
+from matplotlib.patches import Ellipse
 
 def read_points_csv(path: Path) -> List[Tuple[float, float]]:
-    """Read pairs of floats (x, y) from a CSV file.
-
-    - Accepts optional header row (will be skipped if it can't parse as floats).
-    - Skips rows that don't have at least two columns.
-    - Trims whitespace.
-    """
+    """Read pairs of floats (x, y) from a CSV file."""
     points: List[Tuple[float, float]] = []
+    if not path.exists():
+        sys.stderr.write(f"Warning: File not found: {path}\n")
+        return points
+        
     with path.open("r", newline="") as f:
         reader = csv.reader(f)
         for i, row in enumerate(reader, start=1):
@@ -48,90 +44,158 @@ def read_points_csv(path: Path) -> List[Tuple[float, float]]:
                 continue
             cells = [c.strip() for c in row if c is not None]
             if len(cells) < 2:
-                sys.stderr.write(f"Warning: {path.name}: line {i} has fewer than 2 columns; skipped.\n")
                 continue
             try:
                 x = float(cells[0])
                 y = float(cells[1])
                 points.append((x, y))
             except ValueError:
-                sys.stderr.write(f"Warning: {path.name}: line {i} not numeric; skipped.\n")
                 continue
     return points
 
-
-def compute_center(points: List[Tuple[float, float]], method: str = "mean") -> Tuple[float, float]:
+def compute_stats(points: List[Tuple[float, float]], method: str = "mean") -> Dict[str, Any]:
     if not points:
-        return (0.0, 0.0)
-    xs, ys = zip(*points)
-    if method == "median":
-        return (statistics.median(xs), statistics.median(ys))
-    # default mean
-    return (sum(xs) / len(xs), sum(ys) / len(ys))
+        return {}
+    
+    if HAS_NUMPY:
+        arr = np.array(points)
+        if method == "median":
+            center = np.median(arr, axis=0)
+        else:
+            center = np.mean(arr, axis=0)
+            
+        centered = arr - center
+        
+        # Variance and Std Dev
+        var = np.var(arr, axis=0)
+        std = np.std(arr, axis=0)
+        
+        # Radial stats
+        dists = np.linalg.norm(centered, axis=1)
+        rms_r = np.sqrt(np.mean(dists**2))
+        
+        # Covariance for ellipse
+        cov = np.cov(arr.T)
+        
+        return {
+            "center": tuple(center),
+            "var": tuple(var),
+            "std": tuple(std),
+            "rms_r": rms_r,
+            "cov": cov,
+            "count": len(points)
+        }
+    else:
+        # Fallback to standard library
+        xs, ys = zip(*points)
+        if method == "median":
+            cx, cy = statistics.median(xs), statistics.median(ys)
+        else:
+            cx, cy = statistics.mean(xs), statistics.mean(ys)
+            
+        # Variance/Std
+        if len(points) > 1:
+            vx = statistics.variance(xs)
+            vy = statistics.variance(ys)
+            sx = statistics.stdev(xs)
+            sy = statistics.stdev(ys)
+        else:
+            vx, vy, sx, sy = 0.0, 0.0, 0.0, 0.0
+            
+        # Radial
+        sq_dists = [(x-cx)**2 + (y-cy)**2 for x, y in points]
+        rms_r = math.sqrt(sum(sq_dists) / len(points))
+        
+        return {
+            "center": (cx, cy),
+            "var": (vx, vy),
+            "std": (sx, sy),
+            "rms_r": rms_r,
+            "cov": None,
+            "count": len(points)
+        }
 
-
-def align_points(points: List[Tuple[float, float]], center: Tuple[float, float]) -> List[Tuple[float, float]]:
-    cx, cy = center
-    return [(x - cx, y - cy) for (x, y) in points]
-
+def draw_confidence_ellipse(ax, center, cov, n_std=2.0, facecolor='none', **kwargs):
+    """
+    Draw a confidence ellipse of a 2D dataset.
+    """
+    if cov is None:
+        return
+        
+    # Calculate eigenvalues and eigenvectors
+    lambda_, v = np.linalg.eig(cov)
+    lambda_ = np.sqrt(lambda_)
+    
+    # Ellipse geometry
+    width = lambda_[0] * n_std * 2
+    height = lambda_[1] * n_std * 2
+    angle = np.degrees(np.arctan2(v[1, 0], v[0, 0]))
+    
+    ell = Ellipse(xy=center, width=width, height=height, angle=angle,
+                  facecolor=facecolor, **kwargs)
+    ax.add_patch(ell)
 
 def main(argv: List[str]) -> int:
-    parser = argparse.ArgumentParser(description="Plot aligned points from 3 CSV files")
-    parser.add_argument("data_dir", nargs="?", default=None, help="Directory containing b_1.csv, b_2.csv, b_3.csv (default: 25_10_23 next to this script)")
-    parser.add_argument("--method", choices=["mean", "median"], default="mean", help="Centering method per group (default: mean)")
+    parser = argparse.ArgumentParser(description="Plot aligned points from multiple CSV files with stats.")
+    parser.add_argument("files", nargs="+", help="Paths to CSV files to analyze")
+    parser.add_argument("--method", choices=["mean", "median"], default="mean", help="Centering method (default: mean)")
     args = parser.parse_args(argv[1:])
 
-    # Determine data directory
-    script_dir = Path(__file__).resolve().parent
-    default_dir = script_dir / "25_10_23"
-    data_dir = Path(args.data_dir).resolve() if args.data_dir else default_dir
+    files = [Path(f).resolve() for f in args.files]
+    
+    # Setup plot
+    fig, ax = plt.subplots(figsize=(10, 8), dpi=120)
+    cmap = plt.get_cmap("tab10")
+    
+    print(f"{'File':<40} | {'N':<3} | {'Std X':<8} | {'Std Y':<8} | {'RMS R':<8}")
+    print("-" * 85)
 
-    # Input files
-    files = [data_dir / "b_1.csv", data_dir / "b_2.csv", data_dir / "b_3.csv"]
-    missing = [p for p in files if not p.exists()]
-    if missing:
-        sys.stderr.write("Error: Missing expected CSV files:\n" + "\n".join(f"  - {m}" for m in missing) + "\n")
-        return 1
-
-    # Colors for three files
-    colors = ["tab:blue", "tab:orange", "tab:green"]
-
-    # Read, center, and plot
-    fig, ax = plt.subplots(figsize=(8, 6), dpi=120)
-
-    total_points = 0
     for idx, path in enumerate(files):
         pts = read_points_csv(path)
-        total_points += len(pts)
         if not pts:
-            sys.stderr.write(f"Warning: {path.name}: no valid points parsed.\n")
+            print(f"{path.name:<40} | 0   | -        | -        | -")
             continue
-        center = compute_center(pts, method=args.method)
-        aligned = align_points(pts, center)
+            
+        stats = compute_stats(pts, method=args.method)
+        center = stats["center"]
+        
+        # Align points for plotting
+        aligned = [(x - center[0], y - center[1]) for x, y in pts]
         xs, ys = zip(*aligned)
-        ax.scatter(xs, ys, s=36, color=colors[idx], label=f"{path.name} (centered)", alpha=0.9, edgecolors="white", linewidths=0.5)
+        
+        color = cmap(idx % 10)
+        
+        # Plot points
+        label = f"{path.name}\n$\sigma_x={stats['std'][0]:.2f}, \sigma_y={stats['std'][1]:.2f}$\n$RMS={stats['rms_r']:.2f}$"
+        ax.scatter(xs, ys, s=30, color=color, label=label, alpha=0.7, edgecolors="white", linewidths=0.5)
+        
+        # Draw ellipse (2-sigma)
+        if HAS_NUMPY and stats["cov"] is not None:
+            # We draw the ellipse centered at (0,0) because we plotted aligned points
+            draw_confidence_ellipse(ax, (0,0), stats["cov"], n_std=2.0, edgecolor=color, linestyle='--', linewidth=1.5)
 
-    # Draw a faint crosshair at the common center (0,0)
+        # Print to terminal
+        print(f"{path.name:<40} | {stats['count']:<3} | {stats['std'][0]:<8.4f} | {stats['std'][1]:<8.4f} | {stats['rms_r']:<8.4f}")
+
     ax.axhline(0, color="0.5", linewidth=0.8, linestyle=":", zorder=0)
     ax.axvline(0, color="0.5", linewidth=0.8, linestyle=":", zorder=0)
-
-    # Axes formatting
-    title_method = "Mean" if args.method == "mean" else "Median"
-    ax.set_title(f"Aligned points by {title_method} center (b_1.csv, b_2.csv, b_3.csv)")
+    
+    ax.set_title(f"Aligned Points & Error Analysis ({args.method} centered)")
     ax.set_xlabel("x (centered)")
     ax.set_ylabel("y (centered)")
-    ax.legend(frameon=True)
+    ax.legend(bbox_to_anchor=(1.05, 1), loc='upper left', borderaxespad=0.)
     ax.grid(True, linestyle=":", linewidth=0.6, alpha=0.6)
     ax.set_aspect("equal", adjustable="datalim")
-
-    # Tight layout and save
-    out_path = data_dir / "combined_points_aligned.png"
+    
+    # Save output
+    out_dir = files[0].parent if files else Path.cwd()
+    out_path = out_dir / "combined_analysis.png"
+    
     fig.tight_layout()
-    fig.savefig(out_path)
-
-    print(f"Saved aligned plot ({args.method}) with {total_points} points to: {out_path}")
+    fig.savefig(out_path, bbox_inches='tight')
+    print(f"\nSaved analysis plot to: {out_path}")
+    
     return 0
-
 
 if __name__ == "__main__":
     raise SystemExit(main(sys.argv))
