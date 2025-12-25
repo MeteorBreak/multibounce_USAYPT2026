@@ -103,6 +103,88 @@ def get_bounce_matrix_6x6(R_ball, mu, e_n):
 
     return M
 
+def skew(v):
+    """生成反对称矩阵 (Cross product matrix)"""
+    return np.array([
+        [0, -v[2], v[1]],
+        [v[2], 0, -v[0]],
+        [-v[1], v[0], 0]
+    ])
+
+def simulate_flight_dynamics(state_0, error_matrix_0, t_flight, delta_v0, params):
+    """
+    模拟飞行阶段的动力学与误差传播 (包含重力、空气阻力、马格努斯力)
+    """
+    # 解包参数
+    m = params['m']
+    R = params['R']
+    rho = params['rho']
+    Cd = params['Cd']
+    Cl = params['Cl']
+    g = params['g']
+    
+    # 预计算系数
+    # F_drag = -kD * |v| * v
+    kD = 0.5 * Cd * np.pi * R**2 * rho
+    # F_magnus = kL * (omega x v)
+    kL = Cl * np.pi * R**3 * rho
+    
+    # 积分设置
+    steps = 100
+    dt = t_flight / steps
+    
+    state = state_0.copy()
+    E = error_matrix_0.copy()
+    pos_error_accum = np.zeros(3)
+    
+    for _ in range(steps):
+        v = state[:3]
+        omega = state[3:]
+        v_norm = np.linalg.norm(v)
+        
+        # --- 1. 标称状态更新 (Nominal State Update) ---
+        # 计算力
+        F_drag = -kD * v_norm * v
+        F_magnus = kL * np.cross(omega, v)
+        a = g + (F_drag + F_magnus) / m
+        
+        # 更新速度和位置 (Euler积分)
+        # 注意：这里只更新速度用于下一次迭代，位置更新隐含在最终结果中，
+        # 但为了保持state完整性(如果state包含位置的话)，这里只更新v和omega
+        state[:3] += a * dt
+        # state[3:] += 0 # 假设飞行中角速度不变 (忽略空气阻力矩)
+        
+        # --- 2. 误差传播 (Error Propagation) ---
+        # 计算雅可比矩阵 J = d(acc)/d(state)
+        
+        # J_vv = d(a)/dv
+        # d(F_drag)/dv = -kD * (|v|I + v*vT/|v|)
+        term1 = -kD * (v_norm * np.eye(3) + np.outer(v, v) / (v_norm + 1e-9))
+        # d(F_magnus)/dv = kL * [omega]x
+        term2 = kL * skew(omega)
+        J_vv = (term1 + term2) / m
+        
+        # J_vw = d(a)/domega
+        # d(F_magnus)/domega = kL * (-[v]x)
+        J_vw = (kL * (-skew(v))) / m
+        
+        # 构建完整 6x6 雅可比 F
+        # [J_vv, J_vw]
+        # [0,    0   ]
+        F = np.zeros((6, 6))
+        F[:3, :3] = J_vv
+        F[:3, 3:] = J_vw
+        
+        # 更新误差矩阵: E_dot = F @ E  =>  E_new = (I + F*dt) @ E
+        E += (F @ E) * dt
+        
+        # --- 3. 位置误差累积 ---
+        # pos_dot_error = v_error
+        current_v_error = (E @ delta_v0)[:3]
+        pos_error_accum += current_v_error * dt
+        
+    return state, E, pos_error_accum
+
 def simulate_bounce_nominal(v_in, n, e_n, R_ball=0.02):
     """
     更新标称速度，使用与误差矩阵一致的“完全滚动模型”。
@@ -160,11 +242,21 @@ R_ball = 0.02   # 乒乓球半径 2cm
 g = np.array([0, 0, -9.8])
 dt_steps = [0.5, 0.4, 0.3] # 每次飞行的持续时间 (秒) - 假设值
 
+# 空气动力学参数
+flight_params = {
+    'm': 0.0027,    # 质量 kg
+    'R': R_ball,    # 半径 m
+    'rho': 1.225,   # 空气密度 kg/m^3
+    'Cd': 0.5,      # 阻力系数
+    'Cl': 0.2,      # 升力系数 (马格努斯)
+    'g': g
+}
+
 # 2. 初始状态
 # 标称状态 (用于计算基底): 水平发射
-current_nominal_state = np.array([5.0, 0.0, 0.0, 0.0, 0.0, 0.0]) # vx=5, vy=0
+current_nominal_state = np.array([5.0, 0.0, 0.0, 0.0, 50.0, 0.0]) # vx=5, 增加一些上旋 wy=50 rad/s 以展示马格努斯效应
 # 初始误差 (这是我们要传播的)
-delta_v0 = np.array([0.1, 0.05, 0.0, 0.0, 0.0, 0.0]) # x方向有0.1m/s误差，y方向有0.05m/s误差
+delta_v0 = np.array([0.21, 0.07, 0.02, 1.3, 0.2, 0.09]) # x方向有0.1m/s误差，y方向有0.05m/s误差
 
 # 3. 场景定义: 3次弹跳的板法向量
 normals = [
@@ -188,20 +280,20 @@ for i in range(3):
     
     print(f"\n[Phase {i}: Flight -> Bounce {i+1}]")
     
-    # A. 飞行阶段产生的位移误差累积
-    # 公式项: t_i * (当前累积的速度误差)
-    # 当前的速度误差向量 = current_error_matrix * delta_v0
-    current_velocity_error = current_error_matrix @ delta_v0
+    # A. 飞行阶段 (动力学积分 + 误差传播)
+    # 使用新的 simulate_flight_dynamics 替代简单的线性漂移
+    current_nominal_state, current_error_matrix, pos_drift = simulate_flight_dynamics(
+        current_nominal_state, 
+        current_error_matrix, 
+        t_flight, 
+        delta_v0, 
+        flight_params
+    )
     
-    position_drift = t_flight * current_velocity_error[:3] # 只取速度部分
-    total_position_error += position_drift
+    total_position_error += pos_drift
     
     print(f"  Flight Time: {t_flight}s")
-    print(f"  Pos Error Drift this flight: {position_drift}")
-    
-    # 更新标称速度 (重力作用)
-    # v = v0 + g*t
-    current_nominal_state[:3] += g * t_flight
+    print(f"  Pos Error Drift this flight: {pos_drift}")
     print(f"  Impact Velocity (Nominal): {current_nominal_state[:3]}")
     
     # B. 碰撞阶段 (矩阵变换)
