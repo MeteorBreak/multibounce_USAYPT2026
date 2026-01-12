@@ -38,8 +38,43 @@
 误差传播
 
 射出高度 70.5cm
-第一个平面 172 左25
-第二个平面 277 右52.5
-落点 362 右29
+
+彩球 为第三个
+
+第一个平面20*20 172 左25 25.45右
+X+ -> Y+ (局部 -> 世界)
+Y+ -> X-
+RESULT: Frame 1391 -> X: -16.4042 mm, Y: 34.7617 mm
+RESULT: Frame 2767 -> X: 20.8309 mm, Y: 53.2800 mm
+RESULT: Frame 2873 -> X: 33.6229 mm, Y: 43.7583 mm
+RESULT: Frame 2980 -> X: -9.5381 mm, Y: 15.4727 mm
+
+RESULT: Frame 3194 -> X: -2.8648 mm, Y: 13.1384 mm
+RESULT: Frame 3404 -> X: 4.6584 mm, Y: 41.5513 mm
+RESULT: Frame 5098 -> X: 20.8882 mm, Y: 19.9258 mm
+RESULT: Frame 5207 -> X: 12.8585 mm, Y: 20.0472 mm
+
+第二个平面24*24 277 右52.5 21.6左
+
+
+
+落点40*30 362 右29
+X+ -> X-
+Y+ -> Y-
+RESULT: Frame 1109 -> X: -8.0628 mm, Y: -23.9536 mm
+RESULT: Frame 2484 -> X: 12.6567 mm, Y: -35.1421 mm
+RESULT: Frame 2591 -> X: -30.8733 mm, Y: 7.8142 mm
+RESULT: Frame 2699 -> X: 57.9524 mm, Y: -56.7649 mm
+
+RESULT: Frame 2914 -> X: 34.5635 mm, Y: -30.5233 mm
+RESULT: Frame 3120 -> X: -16.5555 mm, Y: -68.3908 mm
+RESULT: Frame 4815 -> X: 60.6139 mm, Y: 24.2484 mm
+RESULT: Frame 4924 -> X: 21.4429 mm, Y: -56.6773 mm
 
 出射目标点 172 左20
+
+待完成：
+    发球机误差
+    多弹跳的标定和分析
+    超级球和网球碰撞参数
+
