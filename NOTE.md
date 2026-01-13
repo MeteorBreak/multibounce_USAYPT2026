@@ -55,7 +55,17 @@ RESULT: Frame 5098 -> X: 20.8882 mm, Y: 19.9258 mm
 RESULT: Frame 5207 -> X: 12.8585 mm, Y: 20.0472 mm
 
 第二个平面24*24 277 右52.5 21.6左
+X+ -> Y-
+Y+ -> X+
+RESULT: Frame 1239 -> X: 71.9777 mm, Y: 5.1422 mm
+RESULT: Frame 2615 -> X: 88.3464 mm, Y: 56.3806 mm
+RESULT: Frame 2722 -> X: 62.8535 mm, Y: -5.7198 mm
+RESULT: Frame 2830 -> X: 91.7079 mm, Y: 36.5631 mm
 
+RESULT: Frame 3045 -> X: 75.7238 mm, Y: 19.2668 mm
+RESULT: Frame 3254 -> X: 104.5418 mm, Y: 10.5923 mm
+RESULT: Frame 4951 -> X: 25.4546 mm, Y: 37.0481 mm
+RESULT: Frame 5059 -> X: 97.7193 mm, Y: 45.0714 mm
 
 
 落点40*30 362 右29
