@@ -1,0 +1,26 @@
+[COMMENT]
+Comment=
+RecordAnnotation=
+[EXPORTINFO]
+Type=avi
+Name=¹ö¶¯µ¯Ìø
+Mode=Single
+Source=EoSens Cube7 color
+[CAMERA]
+Manufacturer=Mikrotron GmbH
+Model=EoSens Cube7 color
+Framerate=2529
+Shuttertime=393
+Serial=00422
+Firmware=B3.01-F1.05-V5.02
+[RECORD]
+StartTime=2026/1/15 16:03:42
+ImageCount=401
+[IMAGEDESCRIPTION]
+ImageWidth=896
+ImageHeight=660
+ImageFormat=COLOR_RGB32
+[SEQUENCEINFORMATION]
+NumberofFrames_00=401
+TriggerFrameNumber_00=1578
+TriggerRefTime_00=3122.6272
