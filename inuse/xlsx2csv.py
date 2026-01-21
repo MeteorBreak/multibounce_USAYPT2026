@@ -17,7 +17,7 @@ def process_excel_to_csv(file_path, camera_fps, tracker_fps):
         # 2. 定义需要保留的列
         # 注意：这里使用了希腊字母 ω (small omega)
         # 根据用户需求，主要关注 t, y, vx, vy，但也保留其他可能存在的列
-        target_columns = ['t', 'y', 'vx', 'vy', 'x', 'ω']
+        target_columns = ['t', 'y', 'vx', 'vy', 'ω']
 
         # 检查这些列是否都在文件中，防止报错
         # 有时候列名可能有空格，先去除空格
