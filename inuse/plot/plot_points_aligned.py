@@ -17,6 +17,9 @@ from typing import List, Tuple, Dict, Any
 import argparse
 import statistics
 import math
+import random
+
+scaler = 1 # 1000 for m to mm, 1 for m to m
 
 # Try importing numpy for advanced stats
 try:
@@ -137,25 +140,76 @@ def draw_confidence_ellipse(ax, center, cov, n_std=2.0, facecolor='none', **kwar
 
 def main(argv: List[str]) -> int:
     parser = argparse.ArgumentParser(description="Plot aligned points from multiple CSV files with stats.")
-    parser.add_argument("files", nargs="+", help="Paths to CSV files to analyze")
+    parser.add_argument("files", nargs="*", help="Paths to CSV files to analyze")
     parser.add_argument("--method", choices=["mean", "median"], default="mean", help="Centering method (default: mean)")
+    parser.add_argument("--random", nargs=9, type=float, metavar='ERR',
+                        help="Generate 3 groups of 20 random points from 9 error inputs (m). "
+                             "Supply 9 floats: (Par1, Norm, Par2) for Plane 1, then Plane 2, then Plane 3. "
+                             "Applies err_p + 0.2*err_n logic. OVERRIDES file input.")
     args = parser.parse_args(argv[1:])
 
-    files = [Path(f).resolve() for f in args.files]
+    # Prepare data sources: List of (label, points)
+    data_sources: List[Tuple[str, List[Tuple[float, float]]]] = []
+    out_dir = Path.cwd()
+
+    if args.random:
+        if args.files:
+            print("Info: --random specified, ignoring input files.")
+        
+        inputs = args.random
+        # Split into 3 groups of 3
+        groups = [inputs[i:i+3] for i in range(0, 9, 3)]
+        
+        print("Simulation Mode: Processing 3 planes (Input m -> Plot mm)...")
+        
+        for i, (e_p1, e_norm, e_p2) in enumerate(groups, start=1):
+            # Parse error inputs
+            # "For the input's second error, i.e., normal error, multiply it by 0.2 
+            # and add it directly to the other two directions"
+            eff_p1 = e_p1 + 0.2 * e_norm
+            eff_p2 = e_p2 + 0.2 * e_norm
+            
+            print(f"  Plane {i}: Inputs ({e_p1}, {e_norm}, {e_p2}) -> Effective Bounds: X={eff_p1:.5f}m, Y={eff_p2:.5f}m")
+            
+            # Generator: random 20 points
+            # Using uniform distribution [-eff, +eff]
+            sim_points = []
+            for _ in range(20):
+                rx = random.uniform(-eff_p1, eff_p1)
+                ry = random.uniform(-eff_p2, eff_p2)
+                sim_points.append((rx, ry))
+                
+            data_sources.append((f"Sim_Plane_{i}", sim_points))
+        
+    else:
+        if not args.files:
+            parser.print_help()
+            return 1
+            
+        files = [Path(f).resolve() for f in args.files]
+        if files:
+            out_dir = files[0].parent
+            
+        for path in files:
+            pts = read_points_csv(path)
+            # Filter empty results here or inside loop
+            data_sources.append((path.name, pts))
     
     # Setup plot
     fig, ax = plt.subplots(figsize=(10, 8), dpi=120)
     cmap = plt.get_cmap("tab10")
     
-    print(f"{'File':<40} | {'N':<3} | {'Std X':<8} | {'Std Y':<8} | {'RMS R':<8}")
-    print("-" * 85)
+    print(f"{'File':<40} | {'N':<3} | {'Std X (mm)':<12} | {'Std Y (mm)':<12} | {'RMS R (mm)':<12}")
+    print("-" * 90)
 
-    for idx, path in enumerate(files):
-        pts = read_points_csv(path)
-        if not pts:
-            print(f"{path.name:<40} | 0   | -        | -        | -")
+    for idx, (name, pts_m) in enumerate(data_sources):
+        if not pts_m:
+            print(f"{name:<40} | 0   | -            | -            | -")
             continue
             
+        # Convert to mm for plotting and stats
+        pts = [(x * scaler, y * scaler) for x, y in pts_m]
+        
         stats = compute_stats(pts, method=args.method)
         center = stats["center"]
         
@@ -166,7 +220,7 @@ def main(argv: List[str]) -> int:
         color = cmap(idx % 10)
         
         # Plot points
-        label = f"{path.name}\n$\sigma_x={stats['std'][0]:.2f}, \sigma_y={stats['std'][1]:.2f}$\n$RMS={stats['rms_r']:.2f}$"
+        label = f"{name}\n$\sigma_x={stats['std'][0]:.2f}, \sigma_y={stats['std'][1]:.2f}$ mm\n$RMS={stats['rms_r']:.2f}$ mm"
         ax.scatter(xs, ys, s=30, color=color, label=label, alpha=0.7, edgecolors="white", linewidths=0.5)
         
         # Draw ellipse (2-sigma)
@@ -175,20 +229,19 @@ def main(argv: List[str]) -> int:
             draw_confidence_ellipse(ax, (0,0), stats["cov"], n_std=2.0, edgecolor=color, linestyle='--', linewidth=1.5)
 
         # Print to terminal
-        print(f"{path.name:<40} | {stats['count']:<3} | {stats['std'][0]:<8.4f} | {stats['std'][1]:<8.4f} | {stats['rms_r']:<8.4f}")
+        print(f"{name:<40} | {stats['count']:<3} | {stats['std'][0]:<12.4f} | {stats['std'][1]:<12.4f} | {stats['rms_r']:<12.4f}")
 
     ax.axhline(0, color="0.5", linewidth=0.8, linestyle=":", zorder=0)
     ax.axvline(0, color="0.5", linewidth=0.8, linestyle=":", zorder=0)
     
     ax.set_title(f"Aligned Points & Error Analysis ({args.method} centered)")
-    ax.set_xlabel("x (centered)")
-    ax.set_ylabel("y (centered)")
+    ax.set_xlabel("x (centered) [mm]")
+    ax.set_ylabel("y (centered) [mm]")
     ax.legend(bbox_to_anchor=(1.05, 1), loc='upper left', borderaxespad=0.)
     ax.grid(True, linestyle=":", linewidth=0.6, alpha=0.6)
     ax.set_aspect("equal", adjustable="datalim")
     
     # Save output
-    out_dir = files[0].parent if files else Path.cwd()
     out_path = out_dir / "combined_analysis.png"
     
     fig.tight_layout()
