@@ -5,8 +5,8 @@ import csv
 import os
 
 # A3 paper dimensions in mm (Landscape)
-A3_WIDTH_MM = 150
-A3_HEIGHT_MM = 150
+A3_WIDTH_MM = 297
+A3_HEIGHT_MM = 420
 
 # Button configuration
 BUTTON_X, BUTTON_Y = 20, 20

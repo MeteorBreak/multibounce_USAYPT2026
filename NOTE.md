@@ -101,3 +101,67 @@ s2 0.071040 0.048630 0.061950
 边界条件
 
 概率密度函数
+
+=======================================================
+   Table Tennis Launcher Initial Velocity Calculator   
+=======================================================
+
+Default Parameters (Standard Ball):
+Mass: 0.0027 kg, Radius: 0.02 m, Air Density: 1.225 kg/m^3
+Launch Pos: [0. 0. 0.], Target Dist: 2.35 m
+
+Current Nominal Velocity Guess: [10.   0.   0.1] m/s
+Do you want to update parameters? (y/n) [n]: n
+
+Enter relative path to CSV file with impact coordinates: pictures/SM_1_points_centered.csv
+
+Columns found: ['-41.78894666666667', '-64.26811333333333']
+Please specify which columns describe the impact coordinates (Y, Z).
+Column for Y (Horizontal on target) [default '-41.78894666666667']: 
+Column for Z (Vertical on target)   [default '-64.26811333333333']: 
+
+Calculating inverse trajectories for 29 points...
+This may take a few seconds per point depending on convergence...
+Point 1: Target(40.158, -48.603) -> V0_calc([28.73, 41.10, -474.95]) Err_mag: 3.68e+01
+Point 2: Target(24.973, -46.002) -> V0_calc([23.03, 29.91, -355.23]) Err_mag: 2.19e+01
+Point 3: Target(19.318, -46.002) -> V0_calc([10.98, 23.44, -132.36]) Err_mag: 1.44e+01
+Point 4: Target(11.264, -44.429) -> V0_calc([15.07, 12.28, -205.06]) Err_mag: 9.35e+00
+Point 5: Target(-3.736, -33.421) -> V0_calc([7.89, -2.55, -77.84]) Err_mag: 2.98e+00
+Point 6: Target(-35.027, -25.256) -> V0_calc([10.51, -28.37, 204.41]) Err_mag: 2.87e+01
+Point 7: Target(-14.248, -12.736) -> V0_calc([2.95, -17.85, 4.55]) Err_mag: 7.70e-03
+Point 8: Target(-57.895, -1.244) -> V0_calc([7.73, -86.25, 63.87]) Err_mag: 3.20e+01
+Point 9: Target(46.674, -5.901) -> V0_calc([29.69, 544.65, 134.36]) Err_mag: 3.60e+00
+Point 10: Target(25.158, -4.329) -> V0_calc([6.83, 72.88, 27.94]) Err_mag: 7.00e-02
+Point 11: Target(14.891, -8.986) -> V0_calc([9.81, 5.78, 191.89]) Err_mag: 1.35e+01
+Point 12: Target(9.973, -8.986) -> V0_calc([9.84, 10.49, 192.05]) Err_mag: 7.47e+00
+Point 13: Target(7.268, -3.482) -> V0_calc([3.69, 9.76, 2.27]) Err_mag: 1.69e+00
+Point 14: Target(5.916, 0.691) -> V0_calc([3.44, 8.66, 7.31]) Err_mag: 2.12e-03
+Point 15: Target(-14.248, -0.397) -> V0_calc([28.81, -155.94, 667.09]) Err_mag: 2.57e+00
+Point 16: Target(-6.195, 0.510) -> V0_calc([6.55, -17.77, 109.06]) Err_mag: 1.90e-01
+Point 17: Target(-2.814, 8.433) -> V0_calc([3.94, -4.72, 23.39]) Err_mag: 5.43e-03
+Point 18: Target(17.350, 17.022) -> V0_calc([10.30, 75.52, 104.58]) Err_mag: 1.90e-01
+Point 19: Target(26.756, 18.353) -> V0_calc([17.99, 199.65, 195.90]) Err_mag: 8.93e-01
+Point 20: Target(38.621, 34.623) -> V0_calc([47.03, 633.02, 698.43]) Err_mag: 1.00e+01
+Point 21: Target(17.781, 29.119) -> V0_calc([22.25, 161.63, 324.80]) Err_mag: 1.50e+00
+Point 22: Target(5.240, 25.187) -> V0_calc([12.57, 27.73, 165.52]) Err_mag: 3.22e-01
+Point 23: Target(-0.109, 45.450) -> V0_calc([40.38, -1.61, 770.13]) Err_mag: 6.71e+00
+Point 24: Target(-0.109, 60.812) -> V0_calc([60.16, -2.00, 1259.63]) Err_mag: 1.77e+01
+Point 25: Target(-23.654, 30.208) -> V0_calc([28.19, -264.97, 416.49]) Err_mag: 2.77e+00
+Point 26: Target(-50.703, 9.099) -> V0_calc([15.50, -207.25, 102.23]) Err_mag: 1.95e+01
+Point 27: Target(-53.162, 15.450) -> V0_calc([47.68, -876.74, 441.79]) Err_mag: 1.09e+01
+Point 28: Target(18.027, 28.877) -> V0_calc([22.10, 162.89, 320.87]) Err_mag: 1.48e+00
+Point 29: Target(-25.682, 30.208) -> V0_calc([29.99, -303.12, 440.34]) Err_mag: 3.25e+00
+
+========================================
+              RESULTS
+========================================
+Nominal Velocity: [10.   0.   0.1]
+Mean Calc Velocity: [ 19.4346689    1.73297713 193.91218603]
+Std Dev (Dispersion): [ 14.70023698 249.97274829 344.84342819]
+
+Velocity Errors (Calculated - Nominal):
+Mean Error: [  9.4346689    1.73297713 193.81218603]
+RMS Error:  [ 17.46739661 249.97875529 395.575724  ]
+
+Save calculated velocities to CSV? (y/n): y
+Saved to velocity_analysis_result.csv
