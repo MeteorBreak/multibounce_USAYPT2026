@@ -325,3 +325,5 @@ print("-" * 50)
 print("\nFinal Result:")
 print(f"Total Position Error (World Frame): {total_position_error}")
 print(f"Final Velocity Error (World Frame): {(current_error_matrix @ delta_v0)[:3]}")
+
+#现在根据这个9*9传播矩阵，写一段全新的代码，计算乒乓球经过两个平面和一个曲面弹跳后的最终误差。这个代码不接受输入。所有参数在程序里由我自己设定。算法完全按照我们刚刚讨论过的这些公式设计，同时通过verlet算法和F_D &= - \frac{1}{2} c_D \rho_{\text{air}} A |v - v_{\text{wind}}| (v - v_{\text{wind}})与F_M &=  c_L \pi R^3 \rho_{\text{air}} w \times (v - v_{\text{wind}})两个主要作用力的公式计算飞行过程中的状态向量变化。程序最终应该输出一个九个方向的张量，包含三个方向的位置误差和六个方向的速度误差。
