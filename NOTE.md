@@ -165,3 +165,37 @@ RMS Error:  [ 17.46739661 249.97875529 395.575724  ]
 
 Save calculated velocities to CSV? (y/n): y
 Saved to velocity_analysis_result.csv
+
+=== Covariance Propagation Simulation ===
+Initial Sigma R: [0.0, 0.0, 0.0]
+
+[Step 1] Flight (0.335s) -> Pos: [0.         0.49912624 1.70260387]
+  Pos Covariance Diag: [0.00050899 0.00060893 0.00022726]
+
+>>> BOUNCE 2 IMPACT (Plot Args 2D):
+    --random 5.089947e-04 0.000000e+00 0.000000e+00 2.272556e-04
+    (Std dev X: 0.0226 m, Z: 0.0151 m)
+  -> Bounce complete. New Vel: [1.07178602 0.97964742 2.69550676]
+
+[Step 3] Flight (0.327s) -> Pos: [0.30971939 0.25775412 2.53108757]
+  Pos Covariance Diag: [0.00107711 0.00030747 0.0005714 ]
+
+>>> BOUNCE 4 IMPACT (Plot Args 2D):
+    --random 1.077106e-03 1.519916e-20 1.519916e-20 5.714012e-04
+    (Std dev X: 0.0328 m, Z: 0.0239 m)
+  -> Bounce complete. New Vel: [-0.56027545  1.82725921  2.1267396 ]
+
+[Step 5] Flight (0.299s) -> Pos: [0.15150713 0.32986864 3.14424114]
+  Pos Covariance Diag: [0.00163525 0.00017964 0.00095779]
+
+>>> BOUNCE 6 IMPACT (Plot Args 2D):
+    --random 1.635254e-03 5.431297e-20 5.431297e-20 9.577918e-04
+    (Std dev X: 0.0404 m, Z: 0.0309 m)
+  -> Bounce complete. New Vel: [-0.2414398   0.9808518   2.07389528]
+
+[Step 7] Flight (0.243s) -> Pos: [0.09497431 0.26319464 3.63098185]
+  Pos Covariance Diag: [0.01120971 0.00453149 0.00658991]
+
+>>> FINAL STATE (Plot Args 2D):
+    --random 1.120971e-02 3.886126e-19 3.886126e-19 6.589906e-03
+    (Std dev X: 0.1059 m, Z: 0.0812 m)

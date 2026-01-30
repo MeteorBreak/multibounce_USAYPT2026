@@ -61,7 +61,7 @@ class PingPongSystem:
         self.rho = 1.225        # Air density (kg/m^3)
         self.Cd = 0.5           # Drag coefficient
         self.Cl = 0.2           # Lift coefficient (Magnus)
-        self.g = np.array([0, 0, -9.8])
+        self.g = np.array([0, -9.8, 0]) # Gravity Y-down
         self.v_wind = np.array([0, 0, 0])
         
         # Precompute constants
@@ -217,9 +217,10 @@ def run_simulation():
     
     # --- A. Initial Conditions ---
     # Nominal State: r(3), v(3), w(3)
-    r_nom = np.array([0., 0., 1.0])
-    v_nom = np.array([5.0, 0.0, -2.0]) 
-    w_nom = np.array([0.0, 50.0, 0.0]) # Topspin
+    # Coordinate System: Y-Up, Z-Forward, X-Right
+    r_nom = np.array([0., 1.0, 0.])    # 1m height
+    v_nom = np.array([0., -2.0, 5.0])  # Forward Z, Down Y
+    w_nom = np.array([50.0, 0.0, 0.0]) # Topspin around X
     
     # Initial Error Vector (9x1)
     # Let's assume we have some uncertainty in initial velocity and spin
@@ -234,13 +235,13 @@ def run_simulation():
     # 1. Flight (0.4s) -> Bounce 1 (Flat, slanted) -> Flight (0.3s) -> Bounce 2 (Curved) -> Flight (0.3s)
     
     sequence = [
-        {'type': 'flight', 'dt': 0.4},
+        {'type': 'flight', 'dt': 0.335},
         {'type': 'bounce', 'normal': normalize(np.array([0.4297, 0.9030, 0])), 'e_n': 0.7023, 'is_curved': False},
-        {'type': 'flight', 'dt': 0.3},
+        {'type': 'flight', 'dt': 0.327},
         {'type': 'bounce', 'normal': normalize(np.array([-0.3681, 0.9298, 0])), 'e_n': 0.7616, 'is_curved': False},
-        {'type': 'flight', 'dt': 0.3},
+        {'type': 'flight', 'dt': 0.299},
         {'type': 'bounce', 'normal': normalize(np.array([0, 1, 0])), 'e_n': 0.7616, 'is_curved': True, 'curvature_radius': 0.5},
-        {'type': 'flight', 'dt': 0.3}
+        {'type': 'flight', 'dt': 0.243}
     ]
     
     print("--- 9D Error Propagation Simulation ---")

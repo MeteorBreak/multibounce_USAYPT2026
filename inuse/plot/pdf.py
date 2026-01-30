@@ -6,7 +6,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from scipy.stats import gaussian_kde
 
-def plot_pdf_heatmap(csv_path):
+def plot_pdf_heatmap(csv_path, invert=False):
     """
     Reads coordinates from a CSV and plots a 2D Probability Density Function heatmap.
     Input CSV is expected to have at least 2 columns (X, Y).
@@ -58,8 +58,12 @@ def plot_pdf_heatmap(csv_path):
              print("Error: Not enough valid numeric data points (>= 2 required) to plot density.")
              sys.exit(1)
              
-        x = df_clean.iloc[:, 0].values
-        y = df_clean.iloc[:, 1].values
+        if invert:
+            x = df_clean.iloc[:, 1].values
+            y = df_clean.iloc[:, 0].values
+        else:
+            x = df_clean.iloc[:, 0].values
+            y = df_clean.iloc[:, 1].values
 
         # Calculate KDE (Kernel Density Estimation)
         # gaussian_kde expects shape (dims, n_points)
@@ -76,7 +80,7 @@ def plot_pdf_heatmap(csv_path):
 
         # Define grid for plotting
         # Fixed range 160x160 (-80 to 80 centered) as requested
-        limit = 80
+        limit = 100
         xmin_grid, xmax_grid = -limit, limit
         ymin_grid, ymax_grid = -limit, limit
 
@@ -141,6 +145,7 @@ def plot_pdf_heatmap(csv_path):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Plot 2D Probability Density Function from CSV coordinates.')
     parser.add_argument('csv_path', type=str, help='Relative path to the input CSV file.')
+    parser.add_argument("-i", "--invert", action="store_true", help="Invert (swap) X and Y axes")
     args = parser.parse_args()
 
-    plot_pdf_heatmap(args.csv_path)
+    plot_pdf_heatmap(args.csv_path, invert=args.invert)

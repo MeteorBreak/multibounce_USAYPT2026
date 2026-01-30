@@ -19,7 +19,7 @@ import statistics
 import math
 import random
 
-scaler = 1 # 1000 for m to mm, 1 for m to m
+scaler = 1000 # 1000 for m to mm, 1 for m to m
 
 # Try importing numpy for advanced stats
 try:
@@ -118,18 +118,24 @@ def compute_stats(points: List[Tuple[float, float]], method: str = "mean") -> Di
             "count": len(points)
         }
 
-def draw_confidence_ellipse(ax, center, cov, n_std=2.0, facecolor='none', **kwargs):
+def draw_confidence_ellipse(ax, center, cov, n_std=1.0, facecolor='none', **kwargs):
     """
     Draw a confidence ellipse of a 2D dataset.
+    n_std: The number of standard deviations to determine the ellipse's radiuses.
+           n_std=1.0 corresponds to the standard 1-sigma ellipse (Mahalanobis distance = 1).
     """
     if cov is None:
         return
         
     # Calculate eigenvalues and eigenvectors
     lambda_, v = np.linalg.eig(cov)
+    # Ensure eigenvalues are non-negative (handle precision errors)
+    lambda_ = np.maximum(lambda_, 0)
     lambda_ = np.sqrt(lambda_)
     
     # Ellipse geometry
+    # width and height are full diameters, so 2 * radius
+    # radius = n_std * sqrt(eigenvalue)
     width = lambda_[0] * n_std * 2
     height = lambda_[1] * n_std * 2
     angle = np.degrees(np.arctan2(v[1, 0], v[0, 0]))
@@ -142,10 +148,11 @@ def main(argv: List[str]) -> int:
     parser = argparse.ArgumentParser(description="Plot aligned points from multiple CSV files with stats.")
     parser.add_argument("files", nargs="*", help="Paths to CSV files to analyze")
     parser.add_argument("--method", choices=["mean", "median"], default="mean", help="Centering method (default: mean)")
-    parser.add_argument("--random", nargs=9, type=float, metavar='ERR',
-                        help="Generate 3 groups of 20 random points from 9 error inputs (m). "
-                             "Supply 9 floats: (Par1, Norm, Par2) for Plane 1, then Plane 2, then Plane 3. "
-                             "Applies err_p + 0.2*err_n logic. OVERRIDES file input.")
+    parser.add_argument("-i", "--invert", action="store_true", help="Invert (swap) X and Y axes")
+    parser.add_argument("--random", nargs='+', type=float, metavar='COV',
+                        help="Generate groups of random points from Covariance Matrix. "
+                             "Supply 4 floats per group: (var_x, cov_xy, cov_yx, var_y). "
+                             "Example: 0.01 0 0 0.01. OVERRIDES file input.")
     args = parser.parse_args(argv[1:])
 
     # Prepare data sources: List of (label, points)
@@ -157,29 +164,37 @@ def main(argv: List[str]) -> int:
             print("Info: --random specified, ignoring input files.")
         
         inputs = args.random
-        # Split into 3 groups of 3
-        groups = [inputs[i:i+3] for i in range(0, 9, 3)]
-        
-        print("Simulation Mode: Processing 3 planes (Input m -> Plot mm)...")
-        
-        for i, (e_p1, e_norm, e_p2) in enumerate(groups, start=1):
-            # Parse error inputs
-            # "For the input's second error, i.e., normal error, multiply it by 0.2 
-            # and add it directly to the other two directions"
-            eff_p1 = e_p1 + 0.2 * e_norm
-            eff_p2 = e_p2 + 0.2 * e_norm
+        if len(inputs) % 4 != 0:
+            print("Error: --random requires multiples of 4 arguments (2x2 matrix elements: var_x cov_xy cov_yx var_y).")
+            return 1
             
-            print(f"  Plane {i}: Inputs ({e_p1}, {e_norm}, {e_p2}) -> Effective Bounds: X={eff_p1:.5f}m, Y={eff_p2:.5f}m")
+        # Split into groups of 4
+        groups = [inputs[i:i+4] for i in range(0, len(inputs), 4)]
+        
+        print("Simulation Mode: Processing covariance matrices (Gaussian)...")
+        
+        for i, (vx, cxy, cyx, vy) in enumerate(groups, start=1):
+            cov_matrix = [[vx, cxy], [cyx, vy]]
             
-            # Generator: random 20 points
-            # Using uniform distribution [-eff, +eff]
+            # Generator: random points from multivariate normal
             sim_points = []
-            for _ in range(20):
-                rx = random.uniform(-eff_p1, eff_p1)
-                ry = random.uniform(-eff_p2, eff_p2)
-                sim_points.append((rx, ry))
+            if HAS_NUMPY:
+                # Generate 200 points for better visualization
+                mean = [0, 0]
+                pts_arr = np.random.multivariate_normal(mean, cov_matrix, 40)
+                sim_points = [tuple(p) for p in pts_arr]
+            else:
+                 print("Error: Numpy is required for Gaussian random generation.")
+                 return 1
                 
-            data_sources.append((f"Sim_Plane_{i}", sim_points))
+            data_sources.append((f"Sim_Cov_{i}", sim_points))
+
+            # Save generated points to CSV
+            csv_filename = out_dir / f"Sim_Cov_{i}.csv"
+            with csv_filename.open("w", newline="") as f:
+                writer = csv.writer(f)
+                writer.writerows(sim_points)
+            print(f"Saved generated points to: {csv_filename}")
         
     else:
         if not args.files:
@@ -208,7 +223,10 @@ def main(argv: List[str]) -> int:
             continue
             
         # Convert to mm for plotting and stats
-        pts = [(x * scaler, y * scaler) for x, y in pts_m]
+        if args.invert:
+            pts = [(y * scaler, x * scaler) for x, y in pts_m]
+        else:
+            pts = [(x * scaler, y * scaler) for x, y in pts_m]
         
         stats = compute_stats(pts, method=args.method)
         center = stats["center"]
@@ -223,10 +241,10 @@ def main(argv: List[str]) -> int:
         label = f"{name}\n$\sigma_x={stats['std'][0]:.2f}, \sigma_y={stats['std'][1]:.2f}$ mm\n$RMS={stats['rms_r']:.2f}$ mm"
         ax.scatter(xs, ys, s=30, color=color, label=label, alpha=0.7, edgecolors="white", linewidths=0.5)
         
-        # Draw ellipse (2-sigma)
+        # Draw ellipse (1-sigma)
         if HAS_NUMPY and stats["cov"] is not None:
             # We draw the ellipse centered at (0,0) because we plotted aligned points
-            draw_confidence_ellipse(ax, (0,0), stats["cov"], n_std=2.0, edgecolor=color, linestyle='--', linewidth=1.5)
+            draw_confidence_ellipse(ax, (0,0), stats["cov"], n_std=1.0, edgecolor=color, linestyle='--', linewidth=1.5)
 
         # Print to terminal
         print(f"{name:<40} | {stats['count']:<3} | {stats['std'][0]:<12.4f} | {stats['std'][1]:<12.4f} | {stats['rms_r']:<12.4f}")
@@ -237,9 +255,11 @@ def main(argv: List[str]) -> int:
     ax.set_title(f"Aligned Points & Error Analysis ({args.method} centered)")
     ax.set_xlabel("x (centered) [mm]")
     ax.set_ylabel("y (centered) [mm]")
+    ax.set_xlim(-100, 100)
+    ax.set_ylim(-100, 100)
     ax.legend(bbox_to_anchor=(1.05, 1), loc='upper left', borderaxespad=0.)
     ax.grid(True, linestyle=":", linewidth=0.6, alpha=0.6)
-    ax.set_aspect("equal", adjustable="datalim")
+    ax.set_aspect("equal", adjustable="box")
     
     # Save output
     out_path = out_dir / "combined_analysis.png"
