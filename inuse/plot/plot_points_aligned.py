@@ -19,7 +19,7 @@ import statistics
 import math
 import random
 
-scaler = 1000 # 1000 for m to mm, 1 for m to m
+scaler = 1 # 1000 for m to mm, 1 for m to m
 
 # Try importing numpy for advanced stats
 try:
@@ -149,6 +149,7 @@ def main(argv: List[str]) -> int:
     parser.add_argument("files", nargs="*", help="Paths to CSV files to analyze")
     parser.add_argument("--method", choices=["mean", "median"], default="mean", help="Centering method (default: mean)")
     parser.add_argument("-i", "--invert", action="store_true", help="Invert (swap) X and Y axes")
+    parser.add_argument("-m", "--move", nargs='+', type=float, metavar='D', help="Offsets (dx1 dy1 dx2 dy2 ...) for corresponding datasets")
     parser.add_argument("--random", nargs='+', type=float, metavar='COV',
                         help="Generate groups of random points from Covariance Matrix. "
                              "Supply 4 floats per group: (var_x, cov_xy, cov_yx, var_y). "
@@ -217,11 +218,24 @@ def main(argv: List[str]) -> int:
     print(f"{'File':<40} | {'N':<3} | {'Std X (mm)':<12} | {'Std Y (mm)':<12} | {'RMS R (mm)':<12}")
     print("-" * 90)
 
+    # Process offsets
+    move_offsets = []
+    if args.move:
+        if len(args.move) % 2 != 0:
+             print("Error: --move requires an even number of arguments (pairs of dx dy).")
+             return 1
+        move_offsets = list(zip(args.move[0::2], args.move[1::2]))
+
     for idx, (name, pts_m) in enumerate(data_sources):
         if not pts_m:
             print(f"{name:<40} | 0   | -            | -            | -")
             continue
             
+        # Determine offset for this dataset
+        dx, dy = 0.0, 0.0
+        if idx < len(move_offsets):
+            dx, dy = move_offsets[idx]
+
         # Convert to mm for plotting and stats
         if args.invert:
             pts = [(y * scaler, x * scaler) for x, y in pts_m]
@@ -232,7 +246,7 @@ def main(argv: List[str]) -> int:
         center = stats["center"]
         
         # Align points for plotting
-        aligned = [(x - center[0], y - center[1]) for x, y in pts]
+        aligned = [(x - center[0] + dx, y - center[1] + dy) for x, y in pts]
         xs, ys = zip(*aligned)
         
         color = cmap(idx % 10)
@@ -243,8 +257,8 @@ def main(argv: List[str]) -> int:
         
         # Draw ellipse (1-sigma)
         if HAS_NUMPY and stats["cov"] is not None:
-            # We draw the ellipse centered at (0,0) because we plotted aligned points
-            draw_confidence_ellipse(ax, (0,0), stats["cov"], n_std=1.0, edgecolor=color, linestyle='--', linewidth=1.5)
+            # We draw the ellipse centered at offset because we plotted aligned points
+            draw_confidence_ellipse(ax, (dx, dy), stats["cov"], n_std=1.0, edgecolor=color, linestyle='--', linewidth=1.5)
 
         # Print to terminal
         print(f"{name:<40} | {stats['count']:<3} | {stats['std'][0]:<12.4f} | {stats['std'][1]:<12.4f} | {stats['rms_r']:<12.4f}")
