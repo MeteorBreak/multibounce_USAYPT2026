@@ -2,7 +2,7 @@
 
 This repository stores the code and data used by the Shenzhen Middle School team in 2026 for the fourth problem, 'Multiple Bounces', in the United States Association for Young Physicists Tournaments (USAYPT)
 
-![alt text](https://github.com/MeteorBreak/multibounce_USAYPT2026/patchoulifumo.jpg)
+![alt text](https://github.com/MeteorBreak/multibounce_USAYPT2026/blob/main/patchoulifumo.jpg?raw=true)
 
 
 Other participating teams and anyone else are welcomed to view this repo for learning, comparison and correction
