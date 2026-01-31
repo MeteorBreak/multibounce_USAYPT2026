@@ -19,7 +19,7 @@ import statistics
 import math
 import random
 
-scaler = 1 # 1000 for m to mm, 1 for m to m
+scaler = 1000 # 1000 for m to mm, 1 for m to m
 
 # Try importing numpy for advanced stats
 try:
@@ -180,9 +180,9 @@ def main(argv: List[str]) -> int:
             # Generator: random points from multivariate normal
             sim_points = []
             if HAS_NUMPY:
-                # Generate 200 points for better visualization
+                # Generate 400 points for better visualization
                 mean = [0, 0]
-                pts_arr = np.random.multivariate_normal(mean, cov_matrix, 40)
+                pts_arr = np.random.multivariate_normal(mean, cov_matrix, 400)
                 sim_points = [tuple(p) for p in pts_arr]
             else:
                  print("Error: Numpy is required for Gaussian random generation.")

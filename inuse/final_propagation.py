@@ -235,13 +235,13 @@ def run_simulation():
     # 1. Flight (0.4s) -> Bounce 1 (Flat, slanted) -> Flight (0.3s) -> Bounce 2 (Curved) -> Flight (0.3s)
     
     sequence = [
-        {'type': 'flight', 'dt': 0.335},
+        {'type': 'flight', 'dt': 0.4},
         {'type': 'bounce', 'normal': normalize(np.array([0.4297, 0.9030, 0])), 'e_n': 0.7023, 'is_curved': False},
-        {'type': 'flight', 'dt': 0.327},
+        {'type': 'flight', 'dt': 0.3},
         {'type': 'bounce', 'normal': normalize(np.array([-0.3681, 0.9298, 0])), 'e_n': 0.7616, 'is_curved': False},
-        {'type': 'flight', 'dt': 0.299},
+        {'type': 'flight', 'dt': 0.3},
         {'type': 'bounce', 'normal': normalize(np.array([0, 1, 0])), 'e_n': 0.7616, 'is_curved': True, 'curvature_radius': 0.5},
-        {'type': 'flight', 'dt': 0.243}
+        {'type': 'flight', 'dt': 0.3}
     ]
     
     print("--- 9D Error Propagation Simulation ---")

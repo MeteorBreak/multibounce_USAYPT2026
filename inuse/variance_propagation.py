@@ -213,19 +213,19 @@ def main():
     # Using the same sequence as final_propagation.py for consistency
     sequence = [
         # Bounce 1: Slanted Flat
-        {'type': 'flight', 'dt': 0.335},
+        {'type': 'flight', 'dt': 0.440},
         {'type': 'bounce', 'normal': normalize(np.array([0.4297, 0.9030, 0])), 'e_n': 0.7023, 'is_curved': False},
         
         # Bounce 2: Curved Surface (Cylindrical-ish)
-        {'type': 'flight', 'dt': 0.327},
+        {'type': 'flight', 'dt': 0.312},
         {'type': 'bounce', 'normal': normalize(np.array([-0.3681, 0.9298, 0])), 'e_n': 0.7616, 'is_curved': False}, # Flat in original? Check.
         
         # Bounce 3: Curved
-        {'type': 'flight', 'dt': 0.299},
-        {'type': 'bounce', 'normal': normalize(np.array([0, 1, 0])), 'e_n': 0.7616, 'is_curved': True, 'curvature_radius': 0.3},
+        {'type': 'flight', 'dt': 0.325},
+        {'type': 'bounce', 'normal': normalize(np.array([0, 1, 0])), 'e_n': 0.7616, 'is_curved': True, 'curvature_radius': 0.25},
         
         # Final Landing
-        {'type': 'flight', 'dt': 0.243}
+        {'type': 'flight', 'dt': 0.199}
     ]
 
     print("=== Covariance Propagation Simulation ===")
