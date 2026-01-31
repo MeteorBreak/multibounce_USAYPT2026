@@ -205,3 +205,38 @@ Confidence Ellipse
 Throw error / Golf Company
 Change of Cd, Cl
 Differentiation Law
+
+Video
+=== Covariance Propagation Simulation ===
+Initial Sigma R: [0.005, 0.005, 0.005]
+
+[Step 1] Flight (0.34s) -> Pos: [ 0.         -0.15789736  1.7262943 ]
+  Pos Covariance Diag: [0.028925 0.028925 0.028925]
+
+>>> BOUNCE 2 IMPACT (Plot Args 2D):
+    --random 2.892500e-02 0.000000e+00 0.000000e+00 2.892500e-02
+    (Std dev X: 0.1701 m, Z: 0.1701 m)
+  -> Bounce complete. New Vel: [0.         4.00190275 2.55521134]
+
+[Step 3] Flight (0.63s) -> Pos: [0.         0.10686665 3.20189268]
+  Pos Covariance Diag: [0.12954104 0.0027995  0.12954104]
+
+>>> BOUNCE 4 IMPACT (Plot Args 2D):
+    --random 1.295410e-01 0.000000e+00 0.000000e+00 1.295410e-01
+    (Std dev X: 0.3599 m, Z: 0.3599 m)
+  -> Bounce complete. New Vel: [0.         1.96860915 2.21907318]
+
+[Step 5] Flight (0.61s) -> Pos: [ 0.         -0.59723542  4.40960053]
+  Pos Covariance Diag: [0.29624916 0.00997253 0.29624916]
+
+>>> BOUNCE 6 IMPACT (Plot Args 2D):
+    --random 2.962492e-01 0.000000e+00 0.000000e+00 2.962492e-01
+    (Std dev X: 0.5443 m, Z: 0.5443 m)
+  -> Bounce complete. New Vel: [0.         2.80034762 1.82809609]
+
+[Step 7] Flight (0.55s) -> Pos: [ 0.         -0.64614106  5.35301167]
+  Pos Covariance Diag: [5.05000560e-01 3.17361579e-05 5.05000560e-01]
+
+>>> FINAL STATE (Plot Args 2D):
+    --random 5.050006e-01 0.000000e+00 0.000000e+00 5.050006e-01
+    (Std dev X: 0.7106 m, Z: 0.7106 m)

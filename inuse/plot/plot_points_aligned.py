@@ -19,7 +19,7 @@ import statistics
 import math
 import random
 
-scaler = 1000 # 1000 for m to mm, 1 for m to m
+scaler = 1 # 1000 for m to mm, 1 for m to m
 
 # Try importing numpy for advanced stats
 try:
